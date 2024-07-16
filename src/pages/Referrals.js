@@ -1,6 +1,5 @@
 // src/pages/Referrals.js
 import React, { useState, useEffect } from 'react';
-import Web3 from 'web3';
 import { getUserByWallet, registerReferral, editWallet } from '../contracts';
 import ConnectWallet from '../components/ConnectWallet';
 
@@ -11,16 +10,16 @@ const Referrals = () => {
   const [web3, setWeb3] = useState(null);
   const [account, setAccount] = useState(null);
 
-  useEffect(() => {
-    if (web3 && account) {
-      const fetchUserInfo = async () => {
-        const user = await getUserByWallet(web3, account);
-        setUserInfo(user);
-      };
+  // useEffect(() => {
+  //   if (web3 && account) {
+  //     const fetchUserInfo = async () => {
+  //       const user = await getUserByWallet(web3, account);
+  //       setUserInfo(user);
+  //     };
 
-      fetchUserInfo();
-    }
-  }, [web3, account]);
+  //     fetchUserInfo();
+  //   }
+  // }, [web3, account]);
 
   const handleRegisterReferral = async () => {
     await registerReferral(web3, account, referralAddress);
