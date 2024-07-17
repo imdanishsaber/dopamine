@@ -7,8 +7,15 @@
     background-color: #cdfffa;
   }
 }
+.navbar-nav .nav-link.active,
+.navbar-nav .nav-link.show {
+  color: #ec008c !important;
+}
 .bg-dark {
   background-color: black !important;
+}
+.text-primary {
+  color: #ec008c !important;
 }
 .box {
   height: 100%;

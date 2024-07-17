@@ -18,6 +18,9 @@ const App = () => {
     const referral = params.get('referral');
     if (referral) {
       dispatch(setReferral(referral));
+      localStorage.setItem('referralAddress', referral)
+    } else if (localStorage.getItem('referralAddress')) {
+      dispatch(setReferral(localStorage.getItem('referralAddress')));
     }
   }, [dispatch]);
   return (
@@ -35,5 +38,5 @@ const App = () => {
 
 export default App;
 
-  // return await dopamineContract.methods.registerReferral(referralAddress).send({ from: account });
-  // return await dopamineContract.methods.editWallet(newWalletAddress).send({ from: account });
+// return await dopamineContract.methods.registerReferral(referralAddress).send({ from: account });
+// return await dopamineContract.methods.editWallet(newWalletAddress).send({ from: account });

@@ -46,7 +46,7 @@ const ConnectWallet = () => {
   }
 
   useEffect(() => {
-    connectWallet()
+    // connectWallet()
   }, []);
 
   return (
