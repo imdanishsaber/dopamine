@@ -22,9 +22,9 @@ const Airdrop = () => {
           const usdcBalance = await usdcContract.methods.balanceOf(DOPE_CONTRACT_ADDRESS).call();
           const finalSupply = await dopeContract.methods.totalSupply().call();
 
-          console.log('dopeBalance:', dopeBalance);
-          console.log('usdcBalance:', usdcBalance);
-          console.log('finalSupply:', finalSupply);
+          // console.log('dopeBalance:', dopeBalance);
+          // console.log('usdcBalance:', usdcBalance);
+          // console.log('finalSupply:', finalSupply);
 
           const dopeBalanceNumber = parseFloat(web3.utils.fromWei(dopeBalance.toString(), 'ether'));
           const usdcBalanceNumber = parseFloat(web3.utils.fromWei(usdcBalance.toString(), 'mwei'));

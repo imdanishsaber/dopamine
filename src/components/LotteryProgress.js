@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const LotteryProgress = ({ type = 'main', lotteryInfo, currentBlock }) => {
     const [progressPercentage, setProgressPercentage] = useState(100);
-    const [mainLotteryEndsText, setmainLotteryEndsText] = useState(null);
-    const intervalRef = useRef(null); // Use ref to keep track of interval
+    const [mainLotteryEndsText, setMainLotteryEndsText] = useState(null);
+    const intervalRef = useRef(null);
 
     const convertSeconds = (seconds) => {
         if (seconds > 0) {
@@ -13,11 +13,11 @@ const LotteryProgress = ({ type = 'main', lotteryInfo, currentBlock }) => {
             seconds %= 60 * 60;
             const minutes = Math.floor(seconds / 60);
             seconds %= 60;
-            return `ENDING IN: ${minutes} Minutes ${seconds} Seconds`
+            return `ENDING IN: ${days} Days ${hours} Hours ${minutes} Minutes ${seconds} Seconds`;
         } else {
-            return 'ENDED'
+            return 'ENDED';
         }
-    }
+    };
 
     useEffect(() => {
         if (lotteryInfo) {
@@ -34,16 +34,14 @@ const LotteryProgress = ({ type = 'main', lotteryInfo, currentBlock }) => {
             let mainLotteryEndsTime = (endBlock - currentBlockNum) * blockTimeInSeconds;
             // console.log(`Time remaining in main lottery: ${mainLotteryEndsTime} seconds`);
 
-            // Clear existing interval
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
             }
 
-            // Set up new interval
             intervalRef.current = setInterval(() => {
                 mainLotteryEndsTime -= 1;
                 let text = convertSeconds(mainLotteryEndsTime);
-                setmainLotteryEndsText(text);
+                setMainLotteryEndsText(text);
 
                 const timeRemainingInSeconds = mainLotteryEndsTime;
                 let remainingPercentage = (timeRemainingInSeconds / totalDurationInSeconds) * 100;
@@ -51,7 +49,6 @@ const LotteryProgress = ({ type = 'main', lotteryInfo, currentBlock }) => {
                 setProgressPercentage(remainingPercentage);
             }, 1000);
 
-            // Cleanup interval on unmount or when dependencies change
             return () => {
                 clearInterval(intervalRef.current);
             };

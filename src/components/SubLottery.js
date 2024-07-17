@@ -18,7 +18,7 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
         if (web3) {
             const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
             const lotteryInfo = await dopamineContract.methods.getCurrentSubLotteryInfo(lotteryNumber).call();
-            // console.log(`lotteryInfo ${lotteryNumber}:`, lotteryInfo);
+            console.log(`lotteryInfo ${lotteryNumber}:`, lotteryInfo);
             setlotteryInfo(lotteryInfo)
         }
     };
@@ -27,7 +27,7 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
         if (web3) {
             const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
             const subLottery = await dopamineContract.methods[`subLottery${lotteryNumber}`]().call();
-            // console.log(`subLottery ${lotteryNumber}:`, subLottery);
+            console.log(`subLottery ${lotteryNumber}:`, subLottery);
             setSubLottery(subLottery)
         }
     };
@@ -37,7 +37,7 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
             try {
                 const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
                 const countSubLotteryTickets = await dopamineContract.methods.countSubLotteryTickets(lotteryNumber, account).call();
-                // console.log(`countSubLotteryTickets ${lotteryNumber}:`, countSubLotteryTickets);
+                console.log(`countSubLotteryTickets ${lotteryNumber}:`, countSubLotteryTickets);
                 setYourTickets(Number(countSubLotteryTickets))
             } catch (error) {
                 console.log('error:', error);
@@ -46,13 +46,13 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
     };
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            fetchSubLottery();
-            fetchSubLotteryInfo();
-            fetchSubLotteryTickets();
-        }, 2000);
+        // const interval = setInterval(() => {
+        fetchSubLottery();
+        fetchSubLotteryInfo();
+        fetchSubLotteryTickets();
+        // }, 2000);
 
-        return () => clearInterval(interval);
+        // return () => clearInterval(interval);
     }, [web3, account]);
 
 
@@ -73,10 +73,10 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
                     console.log('SubLotteryResult event:', event);
                     if (event.lotteryType == lotteryNumber) {
                         setShowSubResult(true)
+                        setSubWinnerResult(event)
                         setTimeout(() => {
                             setShowSubResult(false)
                         }, 2000);
-                        setSubWinnerResult(event)
                     }
                 }
             };
@@ -134,8 +134,8 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
                     :
                     <div className="sub-box">
                         <div className="row align-items-center">
-                            <div className="col-7">
-                                <div className="d-flex justify-content-between">
+                            <div className="col-6">
+                                <div className="d-flex justify-content-between align-items-center">
                                     <div className='text-center'>
                                         <p className='price'>Price</p>
                                         <h1>${subLottery && subLottery.winnerBalance ? usdcConverter(subLottery.winnerBalance) : 0}</h1>
@@ -154,7 +154,7 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
                                     <LotteryProgress type='sub' lotteryInfo={lotteryInfo} currentBlock={currentBlock} />
                                 }
                             </div>
-                            <div className="col-5">
+                            <div className="col-6">
                                 <p className="text">
                                     IF YOU BUY A TICKET <br /> <br />
                                     YOU HAVE 1/
@@ -162,7 +162,7 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
                                     &nbsp; CHANCE &nbsp;
                                     {subLottery && subLottery.winnerBalance ? (
                                         <>
-                                            TO WIN {usdcConverter(subLottery.winnerBalance)}
+                                            TO WIN <span className='text-primary'>${usdcConverter(subLottery.winnerBalance)}</span>
                                         </>
                                     ) : (
                                         <>
@@ -170,11 +170,16 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
                                         </>
                                     )}
                                     <br /><br />
-                                    GET A CHANCE TO WIN $
-                                    {mainLotteryInfo && mainLotteryInfo.totalPrize ? Number(mainLotteryInfo.totalPrize) : ""}
+                                    GET A CHANCE TO WIN &nbsp;
+                                    <span className='text-primary'>
+                                        ${mainLotteryInfo && mainLotteryInfo.totalPrize ? Number(mainLotteryInfo.totalPrize) : ""}
+                                    </span>
                                     <br />
                                     <br />
-                                    AND GET {usdcConverter(subLottery?.ticketPrice)} DOPE AIRDROP
+                                    AND GET&nbsp;
+                                    <span className='text-primary'>
+                                        {usdcConverter(subLottery?.ticketPrice)} DOPE&nbsp;
+                                    </span>AIRDROP
                                 </p>
                             </div>
                         </div>

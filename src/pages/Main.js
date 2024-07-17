@@ -2,14 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useSelector } from 'react-redux';
-import { getCurrentSubLotteryInfo, buySubLotteryTicket } from '../contracts';
 import LotteryProgress from '../components/LotteryProgress'
 import {
   DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS,
-  REFERRALS_CONTRACT_ABI, REFERRALS_CONTRACT_ADDRESS,
-  POINTS_CONTRACT_ABI, POINTS_CONTRACT_ADDRESS,
   USDC_CONTRACT_ABI, USDC_CONTRACT_ADDRESS,
-  DOPE_CONTRACT_ABI, DOPE_CONTRACT_ADDRESS
 } from '../config';
 import SubLottery from '../components/SubLottery';
 
@@ -34,7 +30,7 @@ const Main = () => {
         dopamineContract.methods.getCurrentBlock().call(),
         dopamineContract.methods.getCurrentMainLotteryInfo().call(),
       ]);
-      // console.log('mainLotteryInfo:', mainLotteryInfo);
+      console.log('mainLotteryInfo:', mainLotteryInfo);
       // console.log('currentBlock:', currentBlock);
       setCurrentBlock(Number(currentBlock));
       setMainLotteryInfo(mainLotteryInfo);
@@ -51,12 +47,12 @@ const Main = () => {
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchMainLotteryInfo();
-      fetchMainLotteryTickets();
-    }, 2000);
+    // const interval = setInterval(() => {
+    fetchMainLotteryInfo();
+    fetchMainLotteryTickets();
+    // }, 2000);
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [web3, account]);
 
 
