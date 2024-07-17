@@ -16,7 +16,6 @@ const App = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const referral = params.get('referral');
-    console.log('referral:', referral);
     if (referral) {
       dispatch(setReferral(referral));
     }

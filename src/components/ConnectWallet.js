@@ -5,7 +5,6 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import Web3 from 'web3';
-import addrTruncator from '../helpers';
 
 import { useDispatch } from 'react-redux';
 import { connect, disconnect } from '../redux/connectionSlice';
@@ -33,11 +32,18 @@ const ConnectWallet = () => {
       toast.info('Please Install Metamask Wallet!');
     }
   };
+
   const disconnectWallet = async () => {
     dispatch(disconnect({ account: null, web3: null }));
     toast.info('Metamask Wallet Disconnected!');
 
   };
+
+  const addrTruncator = (addr) => {
+    const start = addr.substring(0, 6);
+    const end = addr.substring(addr.length - 4);
+    return `${start}...${end}`;
+  }
 
   useEffect(() => {
     connectWallet()
@@ -58,5 +64,6 @@ const ConnectWallet = () => {
     </div>
   );
 };
+
 
 export default ConnectWallet;

@@ -1,4 +1,3 @@
-// src/pages/Main.js
 import React, { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -18,49 +17,85 @@ const Main = () => {
   const referral = useSelector((state) => state.referral.referral);
   const { account, web3 } = useSelector((state) => state.connection);
 
-  const [dopamineContract, setDopamineContract] = useState({});
-  const [referralsContract, setReferralsContract] = useState({});
-  const [pointsContract, setPointsContract] = useState({});
-  const [dopeContract, setDopeContract] = useState({});
-
   const [currentBlock, setCurrentBlock] = useState(null);
   const [mainLotteryInfo, setMainLotteryInfo] = useState(null);
   const [mainLotteryTickets, setMainLotteryTickets] = useState(null);
+  const [showMainResult, setShowMainResult] = useState(false);
+  const [mainWinnerResult, setMainWinnerResult] = useState({});
+
+  const fetchMainLotteryInfo = async () => {
+    if (web3) {
+      const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
+
+      const [
+        currentBlock,
+        mainLotteryInfo,
+      ] = await Promise.all([
+        dopamineContract.methods.getCurrentBlock().call(),
+        dopamineContract.methods.getCurrentMainLotteryInfo().call(),
+      ]);
+      // console.log('mainLotteryInfo:', mainLotteryInfo);
+      // console.log('currentBlock:', currentBlock);
+      setCurrentBlock(Number(currentBlock));
+      setMainLotteryInfo(mainLotteryInfo);
+    }
+  };
+
+  const fetchMainLotteryTickets = async () => {
+    if (web3 && account) {
+      const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
+      const mainLotteryTickets = await dopamineContract.methods.countMainLotteryTickets(account).call();
+      // console.log('mainLotteryTickets:', mainLotteryTickets);
+      setMainLotteryTickets(Number(mainLotteryTickets));
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (web3) {
-        const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
-        setDopamineContract(dopamineContract)
+    const interval = setInterval(() => {
+      fetchMainLotteryInfo();
+      fetchMainLotteryTickets();
+    }, 2000);
 
-        const [
-          currentBlock,
-          mainLotteryInfo,
-        ] = await Promise.all([
-          dopamineContract.methods.getCurrentBlock().call(),
-          dopamineContract.methods.getCurrentMainLotteryInfo().call(),
-        ]);
-        console.log('mainLotteryInfo:', mainLotteryInfo);
-        console.log('currentBlock:', currentBlock);
-        setCurrentBlock(Number(currentBlock))
-        setMainLotteryInfo(mainLotteryInfo)
-      }
-    };
-    fetchData();
+    return () => clearInterval(interval);
+  }, [web3, account]);
+
+
+  useEffect(() => {
+    if (web3) {
+      const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
+      const handleMainLotteryRoundStart = (error, event) => {
+        if (!error) {
+          fetchMainLotteryInfo();
+          fetchMainLotteryTickets();
+          console.log('MainLotteryRoundStart event:', event);
+        }
+      };
+
+      const handleMainLotteryResult = (error, event) => {
+        if (!error) {
+          console.log('MainLotteryResult event:', event);
+          setShowMainResult(true)
+          setTimeout(() => {
+            setShowMainResult(false)
+          }, 2000);
+          setMainWinnerResult(event)
+        }
+      };
+
+      const mainLotteryRoundStartSubscription = dopamineContract.events.MainLotteryRoundStart();
+      mainLotteryRoundStartSubscription.on('data', handleMainLotteryRoundStart)
+      mainLotteryRoundStartSubscription.on('error', console.error);
+
+      const mainLotteryResultSubscription = dopamineContract.events.MainLotteryResult()
+      mainLotteryResultSubscription.on('data', handleMainLotteryResult)
+      mainLotteryResultSubscription.on('error', console.error);
+
+      return () => {
+        mainLotteryRoundStartSubscription.unsubscribe();
+        mainLotteryResultSubscription.unsubscribe();
+      };
+    }
   }, [web3]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (web3 && account) {
-        const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
-        setDopamineContract(dopamineContract)
-        const mainLotteryTickets = await dopamineContract.methods.countMainLotteryTickets(account).call();
-        console.log('mainLotteryTickets:', mainLotteryTickets);
-        setMainLotteryTickets(Number(mainLotteryTickets))
-      }
-    };
-    fetchData();
-  }, [account]);
 
   const approveToken = async () => {
     try {
@@ -84,13 +119,13 @@ const Main = () => {
         })
         .on('error', (error, receipt) => {
           console.log('error, receipt:', error, receipt);
-          toast.error('Approve USDC  transaction failed!');
+          toast.error('Approve USDC transaction failed!');
           throw new Error('Approval transaction failed!');
         });
       return true;
     } catch (error) {
       console.log('error:', error);
-      toast.error('Approve USDC  transaction failed!');
+      toast.error('Approve USDC transaction failed!');
       return false;
     }
   };
@@ -105,6 +140,7 @@ const Main = () => {
 
     if (approvalSuccess) {
       try {
+        const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
         await dopamineContract.methods.buySubLotteryTicket(ticketId, referral ? referral : '').send({ from: account })
           .on('transactionHash', (hash) => {
             console.log('Buy lottery transaction Hash:', hash);
@@ -113,6 +149,8 @@ const Main = () => {
           .on('receipt', (receipt) => {
             console.log('receipt:', receipt);
             toast.success('Buy lottery transaction completed successfully!');
+            fetchMainLotteryInfo();
+            fetchMainLotteryTickets();
           })
           .on('error', (error, receipt) => {
             console.log('error, receipt:', error, receipt);
@@ -124,32 +162,66 @@ const Main = () => {
       }
     }
   };
+
+  const usdcConverter = (amount) => {
+    if (web3 && amount) {
+      try {
+        return web3.utils.fromWei(amount.toString(), 'mwei');
+      } catch (error) {
+        console.error('Error converting Wei to Ether:', error);
+      }
+    } else return amount;
+  };
   return (
     <div className="container mt-5">
       <ToastContainer />
       <div className="row">
-        <div className="col-lg-6 mb-4">
-          <div className="box">
-            {
-              mainLotteryInfo && Object.keys(mainLotteryInfo).length > 0 ?
-                <h1>${Number(mainLotteryInfo?.totalPrize)}</h1>
-                :
-                ""
-            }
-            <p className='price'>Price</p>
-            {
-              currentBlock &&
-              <LotteryProgress lotteryInfo={mainLotteryInfo} currentBlock={currentBlock} />
-            }
-            {
-              account &&
-              <p className="ticket">YOUR TICKET: {mainLotteryTickets}</p>
-            }
-            <h2>Main Lottery</h2>
-            <p className='desc'>Description</p>
-          </div>
+        <div className="col-lg-5 col-xl-6 mb-4">
+          {
+            showMainResult ?
+              <div className="box">
+                {
+                  mainWinnerResult.hasWinner ?
+                    mainWinnerResult.winner !== account ?
+                      <>
+                        <h1 className='cong'>Congratulations 🎉</h1>
+                        <p className='prize'>You Won: ${usdcConverter(mainWinnerResult.prizeAmount)}</p>
+                      </>
+                      :
+                      <>
+                        <h3>Winner Address:</h3>
+                        <h4 className='address'>{mainWinnerResult.winner}</h4>
+                        <p className='prize'>Winner Prize: ${usdcConverter(mainWinnerResult.prizeAmount)}</p>
+                      </>
+                    :
+                    <>
+                      <h1 className="cong">No One Won, now the prize is bigger!</h1>
+                    </>
+                }
+              </div>
+              :
+              <div className="box">
+                {
+                  mainLotteryInfo && Object.keys(mainLotteryInfo).length > 0 ?
+                    <h1>${Number(mainLotteryInfo?.totalPrize)}</h1>
+                    :
+                    ""
+                }
+                <p className='price'>Price</p>
+                {
+                  currentBlock &&
+                  <LotteryProgress lotteryInfo={mainLotteryInfo} currentBlock={currentBlock} />
+                }
+                {
+                  account &&
+                  <p className="ticket">YOUR TICKET: {mainLotteryTickets}</p>
+                }
+                <h2>Main Lottery</h2>
+                <p className='desc'>Description</p>
+              </div>
+          }
         </div>
-        <div className="col-lg-6 mb-4">
+        <div className="col-lg-7 col-xl-6 mb-4">
           <SubLottery
             lotteryNumber={1}
             mainLotteryInfo={mainLotteryInfo}

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const LotteryProgress = ({ type = 'main', lotteryInfo, currentBlock }) => {
-    const [progressPercentage, setProgressPercentage] = useState(0);
+    const [progressPercentage, setProgressPercentage] = useState(100);
     const [mainLotteryEndsText, setmainLotteryEndsText] = useState(null);
+    const intervalRef = useRef(null); // Use ref to keep track of interval
 
     const convertSeconds = (seconds) => {
         if (seconds > 0) {
@@ -30,20 +31,30 @@ const LotteryProgress = ({ type = 'main', lotteryInfo, currentBlock }) => {
             const currentTimeInSeconds = currentBlockNum * blockTimeInSeconds;
 
             const totalDurationInSeconds = endTimeInSeconds - startTimeInSeconds;
-            const timeElapsedInSeconds = currentTimeInSeconds - startTimeInSeconds;
+            let mainLotteryEndsTime = (endBlock - currentBlockNum) * blockTimeInSeconds;
+            // console.log(`Time remaining in main lottery: ${mainLotteryEndsTime} seconds`);
 
-            const progressPercentage = (timeElapsedInSeconds / totalDurationInSeconds) * 100;
-            setProgressPercentage(progressPercentage);
+            // Clear existing interval
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+            }
 
-
-            let mainLotteryEndsTime = (endBlock - currentBlockNum) * 2;
-            console.log(`Time remaining in main lottery: ${mainLotteryEndsTime} seconds`);
-            setInterval(() => {
+            // Set up new interval
+            intervalRef.current = setInterval(() => {
                 mainLotteryEndsTime -= 1;
-                let text = convertSeconds(mainLotteryEndsTime)
-                setmainLotteryEndsText(text)
+                let text = convertSeconds(mainLotteryEndsTime);
+                setmainLotteryEndsText(text);
+
+                const timeRemainingInSeconds = mainLotteryEndsTime;
+                let remainingPercentage = (timeRemainingInSeconds / totalDurationInSeconds) * 100;
+                remainingPercentage = Math.max(remainingPercentage, 0); // Ensure it doesn't go below 0%
+                setProgressPercentage(remainingPercentage);
             }, 1000);
 
+            // Cleanup interval on unmount or when dependencies change
+            return () => {
+                clearInterval(intervalRef.current);
+            };
         }
     }, [lotteryInfo, currentBlock]);
 
@@ -59,9 +70,7 @@ const LotteryProgress = ({ type = 'main', lotteryInfo, currentBlock }) => {
                     aria-valuemax="100"
                 ></div>
             </div>
-            {
-                <p className={`ending ${type === 'main' ? 'my-4' : 'my-0'}`}>{mainLotteryEndsText}</p>
-            }
+            <p className={`ending ${type === 'main' ? 'mb-4 mt-2' : ' mt-1 mb-0'}`}>{mainLotteryEndsText}</p>
         </>
     );
 };
