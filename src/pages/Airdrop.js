@@ -53,7 +53,6 @@ const Airdrop = () => {
 
   return (
     <div className="container mt-5">
-      <ToastContainer />
       <h2>Airdrop</h2>
       <div className="row">
         <div className="col-12 mb-4">

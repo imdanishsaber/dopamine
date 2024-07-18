@@ -76,7 +76,6 @@ const Referrals = () => {
   };
   return (
     <div className="container mt-5">
-      <ToastContainer />
       <h2>Referrals</h2>
       {userInfo ? (
         <div className="row">

@@ -39,7 +39,7 @@ const Main = () => {
   };
 
   const referral = useSelector((state) => state.referral.referral);
-  const { account, web3 } = useSelector((state) => state.connection);
+  const { account, web3, wsWeb3 } = useSelector((state) => state.connection);
 
   const [currentBlock, setCurrentBlock] = useState(null);
   const [mainLotteryInfo, setMainLotteryInfo] = useState(null);
@@ -89,8 +89,8 @@ const Main = () => {
 
 
   useEffect(() => {
-    if (web3) {
-      const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
+    if (wsWeb3) {
+      const dopamineContract = new wsWeb3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
       const handleMainLotteryRoundStart = (error, event) => {
         if (!error) {
           fetchMainLotteryInfo();
@@ -125,7 +125,7 @@ const Main = () => {
         mainLotteryResultSubscription.unsubscribe();
       };
     }
-  }, [web3]);
+  }, [wsWeb3]);
 
   useEffect(() => {
     if (web3) {
@@ -249,7 +249,6 @@ const Main = () => {
   };
   return (
     <div className="container mt-5">
-      <ToastContainer />
       <div className="row">
         <div className="col-lg-5 col-xl-6 mb-4">
           {
