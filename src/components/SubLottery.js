@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import LotteryProgress from './LotteryProgress'
 import { useSelector } from 'react-redux';
 import {
     DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS
 } from '../config';
 
-const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock }) => {
+const SubLottery = forwardRef(({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock, subLotteryResult }, ref) => {
+
     const { account, web3 } = useSelector((state) => state.connection);
     const [lotteryInfo, setlotteryInfo] = useState(null);
     const [subLottery, setSubLottery] = useState(null);
     const [yourTickets, setYourTickets] = useState(null);
-
-    const [showSubResult, setShowSubResult] = useState(false);
-    const [subWinnerResult, setSubWinnerResult] = useState({});
 
     const fetchSubLotteryInfo = async () => {
         if (web3) {
@@ -56,45 +54,11 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
     }, [web3, account]);
 
 
-    useEffect(() => {
-        if (web3) {
-            const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
-            const handleSubLotteryRoundStart = (error, event) => {
-                if (!error) {
-                    fetchSubLottery();
-                    fetchSubLotteryInfo();
-                    fetchSubLotteryTickets();
-                    console.log('SubLotteryRoundStart event:', event);
-                }
-            };
-
-            const handleSubLotteryResult = (error, event) => {
-                if (!error) {
-                    console.log('SubLotteryResult event:', event);
-                    if (event.lotteryType == lotteryNumber) {
-                        setShowSubResult(true)
-                        setSubWinnerResult(event)
-                        setTimeout(() => {
-                            setShowSubResult(false)
-                        }, 2000);
-                    }
-                }
-            };
-
-            const subTicketPurchasedSubscription = dopamineContract.events.SubTicketPurchased();
-            subTicketPurchasedSubscription.on('data', handleSubLotteryRoundStart)
-            subTicketPurchasedSubscription.on('error', console.error);
-
-            const subLotteryResultSubscription = dopamineContract.events.SubLotteryResult()
-            subLotteryResultSubscription.on('data', handleSubLotteryResult)
-            subLotteryResultSubscription.on('error', console.error);
-
-            return () => {
-                subTicketPurchasedSubscription.unsubscribe();
-                subLotteryResultSubscription.unsubscribe();
-            };
-        }
-    }, [web3]);
+    useImperativeHandle(ref, () => ({
+        fetchSubLottery,
+        fetchSubLotteryInfo,
+        fetchSubLotteryTickets
+    }));
 
     const usdcConverter = (amount) => {
         if (web3 && amount) {
@@ -106,23 +70,56 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
         } else return amount;
     };
 
+    const renderTicketButton = () => {
+        if (lotteryInfo && lotteryInfo.endBlock <= currentBlock) {
+            if (yourTickets) {
+                return (
+                    <div className="text-center mt-2">
+                        The round is ended, the winner will be shown at the first ticket purchased in the new round.
+                        Don’t worry, if there are no other players, you’ll be fully refunded.
+                    </div>
+                );
+            } else {
+                return (
+                    <div className="text-center mt-2">
+                        The round is ended, be the first to participate in the next round! If no one else participates,
+                        you’ll be fully refunded.
+                    </div>
+                );
+            }
+        } else {
+            return (
+                <div className="text-center">
+                    <div className='text-center'>
+                        <p className='price'>Price</p>
+                        <h1>${subLottery && subLottery.winnerBalance ? usdcConverter(subLottery.winnerBalance) : 0}</h1>
+                    </div>
+                    <p className='usdc'>{usdcConverter(subLottery?.ticketPrice)} USDC</p>
+                    <button className="btn btn-primary" onClick={() => onBuyTicket(lotteryNumber)}
+                    >Buy Ticket
+                    </button>
+                </div>
+            );
+        }
+    };
+
     return (
         <>
             {
-                showSubResult ?
+                subLotteryResult && subLotteryResult.lotteryType == lotteryNumber ?
                     <div className="sub-box">
                         {
-                            subWinnerResult.hasWinner ?
-                                subWinnerResult.winner == account ?
+                            subLotteryResult.hasWinner ?
+                                subLotteryResult.winner == account ?
                                     <>
                                         <h1 className='cong'>Congratulations 🎉</h1>
-                                        <p className='prize'>You Won: ${usdcConverter(subWinnerResult.prizeAmount)}</p>
+                                        <p className='prize'>You Won: ${usdcConverter(subLotteryResult.prizeAmount)}</p>
                                     </>
                                     :
                                     <>
                                         <h3>Winner Address:</h3>
-                                        <h4 className='address'>{subWinnerResult.winner}</h4>
-                                        <p className='prize'>Winner Prize: ${usdcConverter(subWinnerResult.prizeAmount)}</p>
+                                        <h4 className='address'>{subLotteryResult.winner}</h4>
+                                        <p className='prize'>Winner Prize: ${usdcConverter(subLotteryResult.prizeAmount)}</p>
                                         <p className='mb-0'>Next time the price can be yours. </p>
                                     </>
                                 :
@@ -136,23 +133,11 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
                         <div className="row align-items-center">
                             <div className="col-6">
                                 <div className="d-flex justify-content-between align-items-center">
-                                    <div className='text-center'>
-                                        <p className='price'>Price</p>
-                                        <h1>${subLottery && subLottery.winnerBalance ? usdcConverter(subLottery.winnerBalance) : 0}</h1>
-                                    </div>
-                                    <div className='text-center'>
-                                        {
-                                            !yourTickets &&
-                                            <p className='usdc'>{usdcConverter(subLottery?.ticketPrice)} USDC</p>
-                                        }
-                                        <button className="btn btn-primary" onClick={() => onBuyTicket(lotteryNumber)}
-                                            disabled={yourTickets}
-                                        >{yourTickets ? '🤞Good Luck!' : 'Buy Ticket'}</button>
-                                    </div>
+                                    {renderTicketButton()}
                                 </div>
-                                {currentBlock &&
+                                {currentBlock && lotteryInfo && lotteryInfo.endBlock > currentBlock && (
                                     <LotteryProgress type='sub' lotteryInfo={lotteryInfo} currentBlock={currentBlock} />
-                                }
+                                )}
                             </div>
                             <div className="col-6">
                                 <p className="text">
@@ -187,6 +172,6 @@ const SubLottery = ({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock 
             }
         </>
     );
-};
+});
 
 export default SubLottery;
