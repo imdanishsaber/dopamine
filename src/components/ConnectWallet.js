@@ -26,7 +26,7 @@ const ConnectWallet = () => {
         toast.error('Please switch your wallet to Base Network!');
       } else {
         const accounts = await web3.eth.getAccounts();
-        dispatch(connect({ account: accounts[0], web3 }));
+        dispatch(connect({ account: accounts[0], web3: web3 }));
       }
     } else {
       toast.info('Please Install Metamask Wallet!');

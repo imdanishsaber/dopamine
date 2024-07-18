@@ -20,7 +20,7 @@ const connectionSlice = createSlice({
     disconnect: (state) => {
       state.isConnected = false;
       state.account = null;
-      state.web3 = null;
+      state.web3 = new Web3(INFURA_RPC_URL_BASE);
     },
   },
 });
