@@ -37,6 +37,3 @@ const App = () => {
 };
 
 export default App;
-
-// return await dopamineContract.methods.registerReferral(referralAddress).send({ from: account });
-// return await dopamineContract.methods.editWallet(newWalletAddress).send({ from: account });
