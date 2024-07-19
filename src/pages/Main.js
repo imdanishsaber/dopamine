@@ -1,20 +1,23 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+
+import Web3 from 'web3';
+import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
+import { INFURA_RPC_URL_BASE } from '../config'
+import 'react-toastify/dist/ReactToastify.css';
+
+import SubLottery from '../components/SubLottery';
 import LotteryProgress from '../components/LotteryProgress'
+
 import {
   DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS,
   USDC_CONTRACT_ABI, USDC_CONTRACT_ADDRESS,
 } from '../config';
-import SubLottery from '../components/SubLottery';
 
 const Main = () => {
   const subLottery1Ref = useRef();
   const subLottery2Ref = useRef();
   const subLottery3Ref = useRef();
-
-
 
   const handleRefresh1 = () => {
     if (subLottery1Ref.current) {
@@ -39,7 +42,7 @@ const Main = () => {
   };
 
   const referral = useSelector((state) => state.referral.referral);
-  const { account, web3, wsWeb3 } = useSelector((state) => state.connection);
+  const { account, web3 } = useSelector((state) => state.connection);
 
   const [currentBlock, setCurrentBlock] = useState(null);
   const [mainLotteryInfo, setMainLotteryInfo] = useState(null);
@@ -63,7 +66,7 @@ const Main = () => {
         dopamineContract.methods.getCurrentMainLotteryInfo().call(),
       ]);
       console.log('mainLotteryInfo:', mainLotteryInfo);
-      // console.log('currentBlock:', currentBlock);
+      console.log('currentBlock:', currentBlock);
       setCurrentBlock(Number(currentBlock));
       setMainLotteryInfo(mainLotteryInfo);
     }
@@ -79,92 +82,82 @@ const Main = () => {
   };
 
   useEffect(() => {
-    // const interval = setInterval(() => {
     fetchMainLotteryInfo();
     fetchMainLotteryTickets();
-    // }, 2000);
-
-    // return () => clearInterval(interval);
   }, [web3, account]);
 
 
   useEffect(() => {
-    if (wsWeb3) {
-      const dopamineContract = new wsWeb3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
-      const handleMainLotteryRoundStart = (error, event) => {
-        if (!error) {
-          fetchMainLotteryInfo();
-          fetchMainLotteryTickets();
-          console.log('MainLotteryRoundStart event:', event);
-        }
-      };
+    const wsWeb3 = new Web3(INFURA_RPC_URL_BASE)
+    const dopamineContract = new wsWeb3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
 
-      const handleMainLotteryResult = (error, event) => {
-        if (!error) {
-          console.log('MainLotteryResult event:', event);
-          setShowMainResult(true)
-          setTimeout(() => {
-            setShowMainResult(false)
-          }, 2000);
-          setMainWinnerResult(event)
-        }
-      };
+    const handleMainLotteryRoundStart = (error, event) => {
+      if (!error) {
+        fetchMainLotteryInfo();
+        fetchMainLotteryTickets();
+        console.log('MainLotteryRoundStart event:', event);
+      }
+    };
 
-      const mainLotteryRoundStartSubscription = dopamineContract.events.MainLotteryRoundStart();
-      mainLotteryRoundStartSubscription.on("connected", (id) => console.log(`Main Lottery Round Start connected at: ${id}`));
-      mainLotteryRoundStartSubscription.on('data', handleMainLotteryRoundStart)
-      mainLotteryRoundStartSubscription.on('error', console.error);
+    const handleMainLotteryResult = (error, event) => {
+      if (!error) {
+        console.log('MainLotteryResult event:', event);
+        setShowMainResult(true)
+        setTimeout(() => {
+          setShowMainResult(false)
+        }, 2000);
+        setMainWinnerResult(event)
+      }
+    };
 
-      const mainLotteryResultSubscription = dopamineContract.events.MainLotteryResult()
-      mainLotteryResultSubscription.on("connected", (id) => console.log(`Main Lottery Result connected at: ${id}`));
-      mainLotteryResultSubscription.on('data', handleMainLotteryResult)
-      mainLotteryResultSubscription.on('error', console.error);
+    const handleSubLotteryRoundStart = (error, event) => {
+      if (!error) {
+        handleRefresh1()
+        handleRefresh2()
+        handleRefresh3()
+        console.log('SubLotteryRoundStart event:', event);
+      }
+    };
 
-      return () => {
-        mainLotteryRoundStartSubscription.unsubscribe();
-        mainLotteryResultSubscription.unsubscribe();
-      };
-    }
-  }, [wsWeb3]);
+    const handleSubLotteryResult = (error, event) => {
+      if (!error) {
+        console.log('SubLotteryResult event:', event);
+        setSubLotteryResult(event)
+        setTimeout(() => {
+          setSubLotteryResult({})
+        }, 2000);
+      }
+    };
 
-  useEffect(() => {
-    if (web3) {
-      const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
-      const handleSubLotteryRoundStart = (error, event) => {
-        if (!error) {
-          handleRefresh1()
-          handleRefresh2()
-          handleRefresh3()
-          console.log('SubLotteryRoundStart event:', event);
-        }
-      };
+    const mainLotteryRoundStartSubscription = dopamineContract.events.MainLotteryRoundStart();
+    mainLotteryRoundStartSubscription.on("connected", (id) => console.log(`Main Lottery Round Start connected at: ${id}`));
+    mainLotteryRoundStartSubscription.on('data', handleMainLotteryRoundStart)
+    mainLotteryRoundStartSubscription.on('error', console.error);
 
-      const handleSubLotteryResult = (error, event) => {
-        if (!error) {
-          console.log('SubLotteryResult event:', event);
-          setSubLotteryResult(event)
-          setTimeout(() => {
-            setSubLotteryResult({})
-          }, 2000);
-        }
-      };
+    const mainLotteryResultSubscription = dopamineContract.events.MainLotteryResult()
+    mainLotteryResultSubscription.on("connected", (id) => console.log(`Main Lottery Result connected at: ${id}`));
+    mainLotteryResultSubscription.on('data', handleMainLotteryResult)
+    mainLotteryResultSubscription.on('error', console.error);
 
-      const subTicketPurchasedSubscription = dopamineContract.events.SubTicketPurchased();
-      subTicketPurchasedSubscription.on("connected", (id) => console.log(`Sub Ticket Purchased connected at: ${id}`));
-      subTicketPurchasedSubscription.on('data', handleSubLotteryRoundStart)
-      subTicketPurchasedSubscription.on('error', console.error);
+    const subTicketPurchasedSubscription = dopamineContract.events.SubTicketPurchased();
+    subTicketPurchasedSubscription.on("connected", (id) => console.log(`Sub Ticket Purchased connected at: ${id}`));
+    subTicketPurchasedSubscription.on('data', handleSubLotteryRoundStart)
+    subTicketPurchasedSubscription.on('error', console.error);
 
-      const subLotteryResultSubscription = dopamineContract.events.SubLotteryResult()
-      subLotteryResultSubscription.on("connected", (id) => console.log(`Sub Lottery Result connected at: ${id}`));
-      subLotteryResultSubscription.on('data', handleSubLotteryResult)
-      subLotteryResultSubscription.on('error', console.error);
+    const subLotteryResultSubscription = dopamineContract.events.SubLotteryResult()
+    subLotteryResultSubscription.on("connected", (id) => console.log(`Sub Lottery Result connected at: ${id}`));
+    subLotteryResultSubscription.on('data', handleSubLotteryResult)
+    subLotteryResultSubscription.on('error', console.error);
 
-      return () => {
-        subTicketPurchasedSubscription.unsubscribe();
-        subLotteryResultSubscription.unsubscribe();
-      };
-    }
-  }, [web3]);
+
+    return () => {
+      mainLotteryRoundStartSubscription.unsubscribe();
+      mainLotteryResultSubscription.unsubscribe();
+      subTicketPurchasedSubscription.unsubscribe();
+      subLotteryResultSubscription.unsubscribe();
+    };
+  }, []);
+
 
   const approveToken = async () => {
     try {
@@ -210,7 +203,8 @@ const Main = () => {
     if (approvalSuccess) {
       try {
         const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
-        await dopamineContract.methods.buySubLotteryTicket(ticketId, referral ? referral : '').send({ from: account })
+        await dopamineContract.methods.buySubLotteryTicket(ticketId, referral ? referral : '')
+          .send({ from: account, })
           .on('transactionHash', (hash) => {
             console.log('Buy lottery transaction Hash:', hash);
             toast.info('Buy lottery transaction sent!');
@@ -284,7 +278,10 @@ const Main = () => {
                 <p className='price'>Price</p>
                 {
                   currentBlock &&
-                  <LotteryProgress lotteryInfo={mainLotteryInfo} currentBlock={currentBlock} />
+                  <LotteryProgress lotteryInfo={mainLotteryInfo} currentBlock={currentBlock}
+                    onFetchMainLotteryInfo={() => fetchMainLotteryInfo()}
+                    onFetchMainLotteryTickets={() => fetchMainLotteryTickets()}
+                  />
                 }
                 {
                   account &&
@@ -300,7 +297,6 @@ const Main = () => {
             ref={subLottery1Ref}
             lotteryNumber={1}
             mainLotteryInfo={mainLotteryInfo}
-            currentBlock={currentBlock}
             subLotteryResult={subLotteryResult}
             onBuyTicket={(num) => buyTicket(num)}
           />
@@ -308,7 +304,6 @@ const Main = () => {
             ref={subLottery2Ref}
             lotteryNumber={2}
             mainLotteryInfo={mainLotteryInfo}
-            currentBlock={currentBlock}
             subLotteryResult={subLotteryResult}
             onBuyTicket={(num) => buyTicket(num)}
           />
@@ -316,7 +311,6 @@ const Main = () => {
             ref={subLottery3Ref}
             lotteryNumber={3}
             mainLotteryInfo={mainLotteryInfo}
-            currentBlock={currentBlock}
             subLotteryResult={subLotteryResult}
             onBuyTicket={(num) => buyTicket(num)}
           />

@@ -5,19 +5,24 @@ import {
     DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS
 } from '../config';
 
-const SubLottery = forwardRef(({ onBuyTicket, lotteryNumber, mainLotteryInfo, currentBlock, subLotteryResult }, ref) => {
+const SubLottery = forwardRef(({ onBuyTicket, lotteryNumber, mainLotteryInfo, subLotteryResult }, ref) => {
 
     const { account, web3 } = useSelector((state) => state.connection);
     const [lotteryInfo, setlotteryInfo] = useState(null);
     const [subLottery, setSubLottery] = useState(null);
     const [yourTickets, setYourTickets] = useState(null);
+    const [currentBlock, setCurrentBlock] = useState(null);
 
     const fetchSubLotteryInfo = async () => {
         if (web3) {
             const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
             const lotteryInfo = await dopamineContract.methods.getCurrentSubLotteryInfo(lotteryNumber).call();
+            const currentBlock = await dopamineContract.methods.getCurrentBlock().call();
+            // console.log('currentBlock:', currentBlock);
             console.log(`lotteryInfo ${lotteryNumber}:`, lotteryInfo);
+
             setlotteryInfo(lotteryInfo)
+            setCurrentBlock(Number(currentBlock));
         }
     };
 
@@ -74,22 +79,31 @@ const SubLottery = forwardRef(({ onBuyTicket, lotteryNumber, mainLotteryInfo, cu
         if (lotteryInfo && lotteryInfo.endBlock <= currentBlock) {
             if (yourTickets) {
                 return (
-                    <div className="text-center mt-2">
-                        The round is ended, the winner will be shown at the first ticket purchased in the new round.
-                        Don’t worry, if there are no other players, you’ll be fully refunded.
+                    <div className='d-flex flex-column justify-content-center align-items-center'>
+                        <h1>${subLottery && subLottery.winnerBalance ? usdcConverter(subLottery.winnerBalance) : 0}</h1>
+                        <button className="btn btn-primary" onClick={() => onBuyTicket(lotteryNumber)}
+                        >Buy Ticket
+                        </button>
+                        <div className="text-center mt-2">
+                            The round is ended, the winner will be shown at the first ticket purchased in the new round.
+                            Don’t worry, if there are no other players, you’ll be fully refunded.
+                        </div>
                     </div>
                 );
             } else {
                 return (
-                    <div className="text-center mt-2">
-                        The round is ended, be the first to participate in the next round! If no one else participates,
-                        you’ll be fully refunded.
-                    </div>
+                    <div className='d-flex flex-column justify-content-center align-items-center'>
+
+                        <div className="text-center mt-2">
+                            The round is ended, be the first to participate in the next round! If no one else participates,
+                            you’ll be fully refunded.
+                        </div>
+                    </div >
                 );
             }
         } else {
             return (
-                <div className="text-center">
+                <div className="d-flex justify-content-center align-content-center flex-column">
                     <div className='text-center'>
                         <p className='price'>Price</p>
                         <h1>${subLottery && subLottery.winnerBalance ? usdcConverter(subLottery.winnerBalance) : 0}</h1>
@@ -132,11 +146,15 @@ const SubLottery = forwardRef(({ onBuyTicket, lotteryNumber, mainLotteryInfo, cu
                     <div className="sub-box">
                         <div className="row align-items-center">
                             <div className="col-6">
-                                <div className="d-flex justify-content-between align-items-center">
+                                <div className="d-flex justify-content-center align-items-center">
                                     {renderTicketButton()}
                                 </div>
                                 {currentBlock && lotteryInfo && lotteryInfo.endBlock > currentBlock && (
-                                    <LotteryProgress type='sub' lotteryInfo={lotteryInfo} currentBlock={currentBlock} />
+                                    <LotteryProgress type='sub' lotteryInfo={lotteryInfo} currentBlock={currentBlock}
+                                        onFetchSubLottery={() => fetchSubLottery()}
+                                        onFetchSubLotteryInfo={() => fetchSubLotteryInfo()}
+                                        onFetchSubLotteryTickets={() => fetchSubLotteryTickets()}
+                                    />
                                 )}
                             </div>
                             <div className="col-6">

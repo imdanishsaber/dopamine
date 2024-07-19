@@ -6,7 +6,6 @@ const initialState = {
   isConnected: false,
   account: null,
   web3: new Web3(INFURA_RPC_URL_BASE),
-  wsWeb3: new Web3(INFURA_RPC_URL_BASE),
 };
 
 const connectionSlice = createSlice({

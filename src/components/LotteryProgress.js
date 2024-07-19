@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const LotteryProgress = ({ type = 'main', lotteryInfo, currentBlock }) => {
+const LotteryProgress = ({
+    type = 'main', lotteryInfo, currentBlock,
+    onFetchMainLotteryInfo, onFetchMainLotteryTickets,
+    onFetchSubLottery, onFetchSubLotteryInfo, onFetchSubLotteryTickets
+}) => {
     const [progressPercentage, setProgressPercentage] = useState(100);
     const [mainLotteryEndsText, setMainLotteryEndsText] = useState(null);
     const intervalRef = useRef(null);
 
     const convertSeconds = (seconds) => {
+        console.log('seconds:', seconds);
         if (seconds > 0) {
             const days = Math.floor(seconds / (24 * 60 * 60));
             seconds %= 24 * 60 * 60;
@@ -13,8 +18,16 @@ const LotteryProgress = ({ type = 'main', lotteryInfo, currentBlock }) => {
             seconds %= 60 * 60;
             const minutes = Math.floor(seconds / 60);
             seconds %= 60;
-            return `ENDING IN: ${days} Days ${hours} Hours ${minutes} Minutes ${seconds} Seconds`;
+            return `ENDING IN: ${minutes} Minutes ${seconds} Seconds`;
         } else {
+            if (type == 'main') {
+                onFetchMainLotteryInfo();
+                onFetchMainLotteryTickets();
+            } else {
+                onFetchSubLottery()
+                onFetchSubLotteryInfo()
+                onFetchSubLotteryTickets()
+            }
             return 'ENDED';
         }
     };

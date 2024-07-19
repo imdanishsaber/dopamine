@@ -1,6 +1,7 @@
 // config.js
 // export const INFURA_RPC_URL_BASE = "https://mainnet.base.org/";
-export const INFURA_RPC_URL_BASE = "wss://lb.drpc.org/ogws?network=base&dkey=AsR9kiZZ2UqzoTpNvGbcgWQQIZw8RB4R76toUgWAgP__";
+// export const INFURA_RPC_URL_BASE = "wss://lb.drpc.org/ogws?network=base&dkey=AsR9kiZZ2UqzoTpNvGbcgWQQIZw8RB4R76toUgWAgP__";
+export const INFURA_RPC_URL_BASE =  "wss://base-mainnet.g.alchemy.com/v2/MCIfj3dLVzzOuktglt1m6QGonaQR3Dyp"
 
 
 // export const DOPAMINE_CONTRACT_ADDRESS = "0xf8Ab66725317612De240677f4914604e41b76737";
