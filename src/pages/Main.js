@@ -15,6 +15,17 @@ import {
 } from '../config';
 
 const Main = () => {
+  const referral = useSelector((state) => state.referral.referral);
+  const { account, web3 } = useSelector((state) => state.connection);
+
+  const [currentBlock, setCurrentBlock] = useState(null);
+  const [mainLotteryInfo, setMainLotteryInfo] = useState(null);
+  const [mainLotteryTickets, setMainLotteryTickets] = useState(null);
+
+  const [showMainResult, setShowMainResult] = useState(false);
+  const [mainWinnerResult, setMainWinnerResult] = useState({});
+  const [subLotteryResult, setSubLotteryResult] = useState({});
+
   const subLottery1Ref = useRef();
   const subLottery2Ref = useRef();
   const subLottery3Ref = useRef();
@@ -40,19 +51,6 @@ const Main = () => {
       subLottery3Ref.current.fetchSubLotteryTickets();
     }
   };
-
-  const referral = useSelector((state) => state.referral.referral);
-  const { account, web3 } = useSelector((state) => state.connection);
-
-  const [currentBlock, setCurrentBlock] = useState(null);
-  const [mainLotteryInfo, setMainLotteryInfo] = useState(null);
-  const [mainLotteryTickets, setMainLotteryTickets] = useState(null);
-
-  const [showMainResult, setShowMainResult] = useState(false);
-  const [mainWinnerResult, setMainWinnerResult] = useState({});
-
-  const [subLotteryResult, setSubLotteryResult] = useState({});
-
 
   const fetchMainLotteryInfo = async () => {
     if (web3) {
@@ -204,7 +202,10 @@ const Main = () => {
       try {
         const dopamineContract = new web3.eth.Contract(DOPAMINE_CONTRACT_ABI, DOPAMINE_CONTRACT_ADDRESS);
         await dopamineContract.methods.buySubLotteryTicket(ticketId, referral ? referral : '')
-          .send({ from: account, })
+          .send({
+            from: account,
+            gasLimit: 237217,
+          })
           .on('transactionHash', (hash) => {
             console.log('Buy lottery transaction Hash:', hash);
             toast.info('Buy lottery transaction sent!');
@@ -241,6 +242,7 @@ const Main = () => {
       }
     } else return amount;
   };
+
   return (
     <div className="container mt-5">
       <div className="row">

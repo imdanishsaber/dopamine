@@ -110,7 +110,8 @@ const SubLottery = forwardRef(({ onBuyTicket, lotteryNumber, mainLotteryInfo, su
                     </div>
                     <p className='usdc'>{usdcConverter(subLottery?.ticketPrice)} USDC</p>
                     <button className="btn btn-primary" onClick={() => onBuyTicket(lotteryNumber)}
-                    >Buy Ticket
+                        disabled={yourTickets}
+                    >{yourTickets ? '🤞Good Luck!' : 'Buy Ticket'}
                     </button>
                 </div>
             );

@@ -7,10 +7,10 @@ const LotteryProgress = ({
 }) => {
     const [progressPercentage, setProgressPercentage] = useState(100);
     const [mainLotteryEndsText, setMainLotteryEndsText] = useState(null);
+    const [isEnded, setIsEnded] = useState(false);
     const intervalRef = useRef(null);
 
     const convertSeconds = (seconds) => {
-        console.log('seconds:', seconds);
         if (seconds > 0) {
             const days = Math.floor(seconds / (24 * 60 * 60));
             seconds %= 24 * 60 * 60;
@@ -20,13 +20,16 @@ const LotteryProgress = ({
             seconds %= 60;
             return `ENDING IN: ${minutes} Minutes ${seconds} Seconds`;
         } else {
-            if (type == 'main') {
-                onFetchMainLotteryInfo();
-                onFetchMainLotteryTickets();
-            } else {
-                onFetchSubLottery()
-                onFetchSubLotteryInfo()
-                onFetchSubLotteryTickets()
+            if (!isEnded) {
+                setIsEnded(true);
+                if (type === 'main') {
+                    onFetchMainLotteryInfo();
+                    onFetchMainLotteryTickets();
+                } else {
+                    onFetchSubLottery();
+                    onFetchSubLotteryInfo();
+                    onFetchSubLotteryTickets();
+                }
             }
             return 'ENDED';
         }
@@ -45,7 +48,6 @@ const LotteryProgress = ({
 
             const totalDurationInSeconds = endTimeInSeconds - startTimeInSeconds;
             let mainLotteryEndsTime = (endBlock - currentBlockNum) * blockTimeInSeconds;
-            // console.log(`Time remaining in main lottery: ${mainLotteryEndsTime} seconds`);
 
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
@@ -53,6 +55,12 @@ const LotteryProgress = ({
 
             intervalRef.current = setInterval(() => {
                 mainLotteryEndsTime -= 1;
+
+                if (mainLotteryEndsTime <= 0) {
+                    clearInterval(intervalRef.current);
+                    mainLotteryEndsTime = 0;
+                }
+
                 let text = convertSeconds(mainLotteryEndsTime);
                 setMainLotteryEndsText(text);
 
@@ -66,7 +74,7 @@ const LotteryProgress = ({
                 clearInterval(intervalRef.current);
             };
         }
-    }, [lotteryInfo, currentBlock]);
+    }, [lotteryInfo]);
 
     return (
         <>
